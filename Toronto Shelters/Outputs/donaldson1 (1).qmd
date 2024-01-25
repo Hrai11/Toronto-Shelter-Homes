@@ -1,0 +1,244 @@
+---
+title: "Gender and Group Differences in Toronto's Shelter Management"
+subtitle: "Exploring Key Demographics with Toronto's homeless shelters "
+author: 
+  - Harsh
+  - Rai
+thanks: "Code and data are available at: "
+date: today
+date-format: long
+abstract: "This study analyzes  Toronto Shelter System Flow data to understand homelessness demographics in Toronto. Using T-tests and Chi-Square tests, it identifies significant gender disparities and disproportional representation among various groups like families and youths in the shelter system. These results highlight crucial areas for policy improvement and resource distribution, aiming to better support the homeless population."
+format: pdf
+number-sections: true
+bibliography: references.bib
+---
+
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+```
+
+
+# Introduction
+
+
+Homelessness in Toronto is a major issue with wide ranging impacts This study, utilizing a unique approach, delves into the intricacies of this problem by simulating and analyzing data from the Toronto Shelter System Flow, as managed by the Shelter Management Information System (SMIS). The focus of this research is on understanding the demographics and dynamics within the shelter system, including aspects like gender disparities and the representation of various population groups.
+
+The methodology involves simulating data to represent various demographics within the shelter system. Key statistical tests, including T-tests and Chi-Square tests, are employed to analyze the simulated data. The T-test examines potential gender disparities within the shelter system, while the Chi-Square test assesses the proportionate representation of different population groups, such as families, youths, and single adults. These tests are crucial in identifying any potential inequalities or biases within the system, which can inform more targeted and effective policy interventions.
+
+In the following sections of the report, one will firstly get a brief overview of the data and some summary tables and graphs. Following this, the results of our findings will be discussed.
+
+# Data {#sec-data}
+
+## Data Source
+
+The dataset used in this anaylsis was obtained from the OpenDataToronto Library which is a repository of official data for the City of Toronto. The particular dataset was constructed by The Shelter, Support & Housing Administration of the city. The Date range for the data is from January 2018 to December 2023 with a monthly interval.
+
+The data was cleaned, simulated and analysed using the open source R programming language (R Core Team). 
+
+## Key variables: 
+
+The first key variable in this dataset is date.mmm.yy., which represents the time period (month and year) for which the data was published. The second key variable is the population group, which takes on the values of "all population", "chronic", "refugees", "youth", "single adult", and "non-refugees". This variable will allow us analyze the distribution of individuals in the Toronto's shelter system by family type. The other key variables in this dataset are gender_male and gender_female, which will allow to analyze the gender distribution of individuals in the Toronto's shelter system. 
+
+## Data Overview: 
+
+```{r, echo=FALSE}
+#| label: fig-bills
+#| fig-cap: Bills of penguins
+#| echo: false
+simulated_data <- read.csv("simulated_data.csv")
+```
+
+
+```{r, echo=FALSE}
+
+simulated_data$new_date=as.Date(paste("1-",simulated_data$date.mmm.yy.,sep=""),format="%d-%b-%y")
+ggplot(simulated_data) + 
+  geom_line(aes(x=new_date,y=actively_homeless,group=population_group,
+            colour=population_group))+
+  theme_minimal()+
+  xlab("Date")+
+  ylab("Actively Homeless")+
+  ggtitle("Number of Actively Homeless Individuals in Toronto's Shelter System")
+```
+The graph above shows that the number of actively homeless individuals in Toronto's shelter system is approximately constant overtime, although it shows a season pattern. This trend is similar among all population groups, with the exemption of chronically homeless individuals, the number of which appears to be increasing overtime.  
+
+```{r, echo = FALSE}
+
+#Creating the summary tables:
+#Breakdown by gender:
+males=simulated_data %>% 
+  filter(population_group=="All Population") %>% 
+  select(gender_male)
+females=simulated_data %>% 
+  filter(population_group=="All Population") %>% 
+  select(gender_female)
+gender_group_values=data.frame(c("Males","Females"),c(mean(males$gender_male),
+                                                      mean(females$gender_female)))
+colnames(gender_group_values)=c("Gender","Mean Number")
+gender_group_values$`Mean Number`=round(gender_group_values$`Mean Number`,2)
+knitr::kable(gender_group_values)
+```
+
+The table above shows that there are significantly more males observed within the data set as opposed to females. The following tables offer us further insight into the distribution of the homeless population of Toronto by age and group type.
+
+
+```{r, echo=FALSE}
+#| label: fig-planes
+#| fig-cap: 
+#| echo: false
+#| warning: false
+#| message: false
+
+
+#Breakdown by the population group:
+refugees=simulated_data %>% 
+  filter(population_group=="Refugees") %>% 
+  group_by(date.mmm.yy.) %>% 
+  select(gender_male,gender_female) %>% 
+  mutate(total_refugees=gender_male+gender_female)
+chronic=simulated_data %>% 
+  filter(population_group=="Chronic") %>% 
+  group_by(date.mmm.yy.) %>% 
+  select(gender_male,gender_female) %>% 
+  mutate(total_chronic=gender_male+gender_female)
+families=simulated_data %>% 
+  filter(population_group=="Families") %>% 
+  group_by(date.mmm.yy.) %>% 
+  select(gender_male,gender_female) %>% 
+  mutate(total_families=gender_male+gender_female)
+youth=simulated_data %>% 
+  filter(population_group=="Youth") %>% 
+  group_by(date.mmm.yy.) %>% 
+  select(gender_male,gender_female) %>% 
+  mutate(total_youth=gender_male+gender_female)
+single_adult=simulated_data %>% 
+  filter(population_group=="Single Adult") %>% 
+  group_by(date.mmm.yy.) %>% 
+  select(gender_male,gender_female) %>% 
+  mutate(total_single_adult=gender_male+gender_female)
+non_refugees=simulated_data %>% 
+  filter(population_group=="Non-refugees") %>% 
+  group_by(date.mmm.yy.) %>% 
+  select(gender_male,gender_female) %>% 
+  mutate(total_non_refugees=gender_male+gender_female)
+indigenous=simulated_data[253:nrow(simulated_data),] %>% 
+  filter(population_group=="Indigenous") %>% 
+  group_by(date.mmm.yy.) %>% 
+  select(gender_male,gender_female) %>% 
+  mutate(total_indigenous=gender_male+gender_female)
+population_group_values=data.frame(c("Chronic","Refugees","Families","Youth","Single Adult",
+                                     "Non-refugees","Indigenous"),c(mean(chronic$total_chronic),
+                                     mean(refugees$total_refugees),
+                                     mean(families$total_families),
+                                     mean(youth$total_youth),
+                                     mean(single_adult$total_single_adult),
+                                     mean(non_refugees$total_non_refugees),
+                                     mean(indigenous$total_indigenous)))
+colnames(population_group_values)=c("Population Group","Mean Number")
+population_group_values$`Mean Number`=round(population_group_values$`Mean Number`,2)
+knitr::kable(population_group_values)
+#Breakdown by age:
+ageunder16=simulated_data %>% 
+  filter(population_group=="All Population") %>% 
+  select(ageunder16)
+age16.24=simulated_data %>% 
+  filter(population_group=="All Population") %>% 
+  select(age16.24)
+age25.44=simulated_data %>% 
+  filter(population_group=="All Population") %>% 
+  select(age25.44)
+age45.64=simulated_data %>% 
+  filter(population_group=="All Population") %>% 
+  select(age45.64)
+age65over=simulated_data %>% 
+  filter(population_group=="All Population") %>% 
+  select(age65over)
+age_group_values=data.frame(c("Under 16","16-24","25-44","45-64","65 or Over"),
+                            c(mean(ageunder16[,1]),mean(age16.24[,1]),mean(age25.44[,1]),
+                              mean(age45.64[,1]),mean(age65over[,1])))
+colnames(age_group_values)=c("Age Group","Mean Number")
+age_group_values$`Mean Number`=round(age_group_values$`Mean Number`,2)
+knitr::kable(age_group_values)
+
+```
+
+
+
+The graphs below help us visualise the dataset.
+
+
+
+
+```{r, echo=FALSE}
+#Average number of males and females in the Toronto's shelter system:
+mean_males=mean(males$gender_male)
+mean_females=mean(females$gender_female)
+summary_data=data.frame(c("Male","Female"),c(mean_males,mean_females))
+colnames(summary_data)=c("Gender","Mean")
+options(scipen=999)
+ggplot(summary_data)+
+  geom_bar(aes(x = Gender, y = Mean,fill=Gender),stat = "identity", position = position_dodge())+
+  ggtitle("Average no. of Males and Females in the Toronto Shelter System")+
+  theme(legend.position = "none")
+#Number of families, youths and single adults in the shelter system:
+values=c(sum(families$total_families),sum(youth$total_youth),
+         sum(single_adult$total_single_adult))
+summary_data=data.frame(c("Family","Youth","Single Adult"),values)
+colnames(summary_data)=c("Family Type","Number")
+ggplot(summary_data)+
+  geom_bar(aes(x = `Family Type`, y = Number,fill=`Family Type`),stat = "identity", position = position_dodge())+
+  ggtitle("Most Common Family Types")+
+  theme(legend.position = "none")
+```
+
+
+
+```{r, echo=FALSE,results=FALSE}
+#Running the t-test and the Chi-Square test:
+#t-test:
+t.test(males,females)
+#Chi-Square test:
+chisq.test(values, p = c(1/3, 1/3, 1/3))
+```
+
+
+# Results
+
+The result of the two-sample t-test indicates that there is a significant difference between the average number of males and females in the Toronto's shelter system, t = 24.651,p < 0.05. As expected, the average number of males is higher than the average number of females. This could possibly suggest that there are in fact more homeless men then women. Several studies appear to back this, for instance it was found that men accounted for 73% of the homeless population (Dukele). 
+
+Additionally, the results of the Chi-Square test indicate that there is a significant difference between the proportions of families, single adults and youths in the Toronto's shelter system, $\chi^2=321224$,p < 0.05. In particular, the proportion of single adults is the highest in the Toronto shelter system, followed by families and youths. 
+
+
+
+
+\newpage
+
+
+
+
+
+# References
+
+```{bibliography}
+
+Dukule, Inta. “The Intersection of Gender and Homelessness - Addressing the Root Causes of Women’s Homelessness.” Fred Victor, 6 July 2023, www.fredvictor.org/2023/03/05/women-and-homelessness/. 
+
+R Core Team. 2022. R: A Language and Environment for Statistical Computing. Vienna,
+Austria: R Foundation for Statistical Computing. https://www.R-project.org/.
+
+“TORONTO SHELTER SYSTEM FLOW.” Open Data Toronto, open.toronto.ca/dataset/toronto-shelter-system-flow/. Accessed 25 Jan. 2024. 
+
+```
+
+
+
+
+
+
+
+
+
